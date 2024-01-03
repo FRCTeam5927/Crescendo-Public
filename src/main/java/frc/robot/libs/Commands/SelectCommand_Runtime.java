@@ -1,0 +1,144 @@
+// Copyright (c) FIRST and other WPILib contributors.
+// Open Source Software; you can modify and/or share it under the terms of
+// the WPILib BSD license file in the root directory of this project.
+
+package frc.robot.libs.Commands;
+
+import static edu.wpi.first.util.ErrorMessages.requireNonNullParam;
+
+import edu.wpi.first.util.sendable.SendableBuilder;
+import edu.wpi.first.wpilibj2.command.*;
+
+import java.util.Map;
+import java.util.function.Supplier;
+//import java.util.function.;
+
+/**
+ * A command composition that runs one of a selection of commands, either using a selector and a key
+ * to command mapping, or a supplier that returns the command directly at runtime.
+ *
+ * <p>The rules for command compositions apply: command instances that are passed to it cannot be
+ * added to any other composition or scheduled individually, and the composition requires all
+ * subsystems its components require.
+ *
+ * <p>This class is provided by the NewCommands VendorDep
+ */
+public class SelectCommand_Runtime extends Command {
+    private final Map<Object, Command> m_commands;
+    private final Supplier<Object> m_selector;
+    private final Supplier<Command> m_toRun;
+    private Command m_selectedCommand;
+    private boolean m_runsWhenDisabled = true;
+    private InterruptionBehavior m_interruptBehavior = InterruptionBehavior.kCancelIncoming;
+
+    /**
+     * Creates a new SelectCommand.
+     *
+     * @param commands the map of commands to choose from
+     * @param selector the selector to determine which command to run
+     */
+    public SelectCommand_Runtime(Map<Object, Command> commands, Supplier<Object> selector) {
+        m_commands = requireNonNullParam(commands, "commands", "SelectCommand");
+        m_selector = requireNonNullParam(selector, "selector", "SelectCommand");
+
+        CommandScheduler.getInstance()
+                .registerComposedCommands(commands.values().toArray(new Command[] {}));
+
+        m_toRun = null;
+
+        for (Command command : m_commands.values()) {
+            m_requirements.addAll(command.getRequirements());
+            m_runsWhenDisabled &= command.runsWhenDisabled();
+            if (command.getInterruptionBehavior() == InterruptionBehavior.kCancelSelf) {
+                m_interruptBehavior = InterruptionBehavior.kCancelSelf;
+            }
+        }
+    }
+
+    /**
+     * Creates a new SelectCommand.
+     *
+     * @param toRun a supplier providing the command to run
+     * @deprecated Replace with {@link ProxyCommand}
+     */
+    @Deprecated
+    public SelectCommand_Runtime(Supplier<Command> toRun) {
+        m_commands = null;
+        m_selector = null;
+        m_toRun = requireNonNullParam(toRun, "toRun", "SelectCommand");
+
+        // we have no way of checking the underlying command, so default.
+        m_runsWhenDisabled = false;
+        m_interruptBehavior = InterruptionBehavior.kCancelSelf;
+    }
+
+    @Override
+    public void initialize() {
+        pollSelector();
+        m_selectedCommand.initialize();
+    }
+
+    public void pollSelector() {
+        if (m_selector != null) {
+            Object runtimeEnum = m_selector.get();
+//            currentEnum =
+
+            if (!m_commands.containsKey(runtimeEnum)) {
+                m_selectedCommand =
+                        new PrintCommand(
+                                "SelectCommand selector value does not correspond to" + " any command!");
+                return;
+            }
+
+            if(runtimeEnum != currentEnum) {
+                m_selectedCommand = m_commands.get(runtimeEnum);
+                currentEnum = runtimeEnum;
+            }
+
+        } else {
+            m_selectedCommand = m_toRun.get();
+        }
+
+    }
+
+    Object prevEnum;
+    Object currentEnum;
+
+    @Override
+    public void execute() {
+        pollSelector();
+        if(prevEnum != currentEnum){
+            m_selectedCommand.initialize();
+        }
+        prevEnum = currentEnum;
+        m_selectedCommand.execute();
+    }
+
+    @Override
+    public void end(boolean interrupted) {
+        m_selectedCommand.end(interrupted);
+    }
+
+    @Override
+    public boolean isFinished() {
+        return m_selectedCommand.isFinished();
+    }
+
+    @Override
+    public boolean runsWhenDisabled() {
+        return m_runsWhenDisabled;
+    }
+
+    @Override
+    public InterruptionBehavior getInterruptionBehavior() {
+        return m_interruptBehavior;
+    }
+
+    @Override
+    public void initSendable(SendableBuilder builder) {
+        super.initSendable(builder);
+
+        builder.addStringProperty(
+                "selected", () -> m_selectedCommand == null ? "null" : m_selectedCommand.getName(), null);
+    }
+}

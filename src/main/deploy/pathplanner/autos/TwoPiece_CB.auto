@@ -1,0 +1,36 @@
+{
+  "version": 1.0,
+  "startingPose": {
+    "position": {
+      "x": 1.8668066215627297,
+      "y": 0.4796756372194245
+    },
+    "rotation": 0
+  },
+  "command": {
+    "type": "sequential",
+    "data": {
+      "commands": [
+        {
+          "type": "path",
+          "data": {
+            "pathName": "OnePiece_CB"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "ScoreTwoPiece_CB"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "BANANA"
+          }
+        }
+      ]
+    }
+  },
+  "folder": null
+}

@@ -1,0 +1,42 @@
+{
+  "version": 1.0,
+  "startingPose": {
+    "position": {
+      "x": 1.8553321540504386,
+      "y": 0.5077719969224177
+    },
+    "rotation": 0
+  },
+  "command": {
+    "type": "sequential",
+    "data": {
+      "commands": [
+        {
+          "type": "path",
+          "data": {
+            "pathName": "OnePiece_CB"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "ScoreTwoPiece_CB"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "PickupGP3"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "ScoreGP3"
+          }
+        }
+      ]
+    }
+  },
+  "folder": null
+}
